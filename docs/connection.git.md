@@ -69,3 +69,26 @@ git branch -M main
 
 8. Enviar
 git push -u origin main
+
+9. Fluxo diário
+9.1 - git checkout develop
+      git add .
+      git commit -m "feat: sales module"
+      git push origin develop
+
+10. depois que validar
+10.1 - git checkout main
+       git merge develop
+       git push origin main
+
+11. Criar a tag       
+git tag -a v0.1.0 -m "ERP Foundation"
+
+12. Verificar as tags
+git tag
+
+13. enviar tag para o GitHub
+git push origin v0.1.0
+
+14. Ver detalhes da tag
+git show v0.1.0
