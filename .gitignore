@@ -30,3 +30,11 @@ coverage/
 
 # Cache
 .cache/
+
+# AI Tools
+.agents/
+.claude/
+.windsurf/
+
+# chave git
+#  AAAAC3NzaC1lZDI1NTE5AAAAINwA4yoFve7PcL/wlQZl0Rn+CXVNSoQ1tfFykGlh6Kro
