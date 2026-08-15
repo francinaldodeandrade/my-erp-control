@@ -2,8 +2,11 @@ import { randomUUID } from "crypto";
 
 import { prisma } from "../../config/prisma.js";
 import { SaleRepository } from "./sale.repository.js";
+import { FinancialService } from "../financial/financial.service.js";
 
 const repository = new SaleRepository();
+
+const financialService = new FinancialService();
 
 export class SaleService {
   async create(data) {
@@ -115,12 +118,44 @@ export class SaleService {
     return sale;
   }
 
+  // async approve(id) {
+  //   return repository.updateStatus(
+  //     id,
+  //     "APPROVED"
+  //   );
+  // }
+
   async approve(id) {
-    return repository.updateStatus(
+  const sale =
+    await repository.findById(id);
+
+  if (!sale) {
+    throw new Error(
+      "Venda não encontrada."
+    );
+  }
+
+  if (
+    sale.status === "APPROVED"
+  ) {
+    throw new Error(
+      "Venda já aprovada."
+    );
+  }
+
+  const approvedSale =
+    await repository.updateStatus(
       id,
       "APPROVED"
     );
-  }
+
+  await financialService
+    .createReceivableFromSale(
+      sale
+    );
+
+  return approvedSale;
+}
 
   async cancel(id) {
     return repository.updateStatus(
