@@ -1,6 +1,9 @@
 import { prisma }
   from "../../config/prisma.js";
 
+import { createNotification }
+  from "../../services/notification/createNotification.js";
+
 export class StockService {
   async processSale(sale) {
     for (const item of sale.items) {
@@ -41,6 +44,22 @@ export class StockService {
           currentStock: balanceAfter,
         },
       });
+
+      if (
+  balanceAfter <
+  Number(product.minimumStock)
+) {
+  await createNotification({
+    title: "Estoque abaixo do mínimo",
+    message:
+      `${product.description} está com estoque crítico.`,
+    type: "STOCK",
+    referenceTable:
+      "finished_products",
+    referenceId:
+      product.id,
+  });
+}
 
       await prisma.stockMovement.create({
         data: {

@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma.js";
 import { SaleRepository } from "./sale.repository.js";
 import { FinancialService } from "../financial/financial.service.js";
 import { StockService } from "../stock/stock.service.js";
+import { createNotification } from "../../services/notification/createNotification.js";
 
 const repository = new SaleRepository();
 
@@ -191,6 +192,22 @@ export class SaleService {
     .processSale(
       sale
     );
+
+  await createNotification({
+  title: "Venda aprovada",
+  message: `Venda ${sale.number} aprovada com sucesso.`,
+  type: "SYSTEM",
+  referenceTable: "sales",
+  referenceId: sale.id,
+});
+
+await createNotification({
+  title: "Conta a receber criada",
+  message: `Recebível de R$ ${sale.totalAmount} criado para a venda ${sale.number}.`,
+  type: "FINANCIAL",
+  referenceTable: "financial_transactions",
+  referenceId: sale.id,
+});
 
   return approvedSale;
 }

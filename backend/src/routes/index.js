@@ -14,6 +14,8 @@ import saleRoutes from "../modules/sales/sale.routes.js";
 
 import financialRoutes from "../modules/financial/financial.routes.js";
 
+import notificationRoutes from "../modules/notifications/notification.routes.js";
+
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -58,6 +60,11 @@ router.use(
 router.use(
   "/financial",
   financialRoutes
+);
+
+router.use(
+  "/notifications",
+  notificationRoutes
 );
 
 export default router;
