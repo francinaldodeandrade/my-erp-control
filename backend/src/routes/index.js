@@ -16,12 +16,18 @@ import financialRoutes from "../modules/financial/financial.routes.js";
 
 import notificationRoutes from "../modules/notifications/notification.routes.js";
 
+import supplierRoutes from "../modules/suppliers/supplier.routes.js";
+
+import purchaseRoutes from "../modules/purchases/purchase.routes.js";
+
+import rawMaterialRoutes from "../modules/raw-materials/rawMaterial.routes.js";
+
 const router = Router();
 
 router.get("/", (req, res) => {
   return res.json({
     app: "ERP Control",
-    version: "1.0.0",
+    version: "1.5.0",
     status: "online",
   });
 });
@@ -65,6 +71,21 @@ router.use(
 router.use(
   "/notifications",
   notificationRoutes
+);
+
+router.use(
+  "/suppliers",
+  supplierRoutes
+);
+
+router.use(
+  "/purchases",
+  purchaseRoutes
+);
+
+router.use(
+  "/raw-materials",
+  rawMaterialRoutes
 );
 
 export default router;

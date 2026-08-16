@@ -22,6 +22,32 @@ export class FinancialService {
     return transaction;
   }
 
+   async createPayableFromPurchase(
+  purchase
+) {
+  return repository.create({
+    referenceNumber:
+      purchase.number,
+
+    description:
+      `Compra ${purchase.number}`,
+
+    type: "PAYABLE",
+
+    status: "OPEN",
+
+    amount:
+      purchase.totalAmount,
+
+    dueDate:
+      purchase.expectedDelivery ||
+      new Date(),
+
+    supplierId:
+      purchase.supplierId,
+  });
+}
+
   async findMany() {
     return repository.findMany();
   }
