@@ -87,15 +87,36 @@ export class ProductionOrderService {
     });
   }
 
-  async finish(id) {
-    return repository.update(id, {
-      status: "COMPLETED",
+  async finish(id, data) {
+  const order =
+    await this.findById(id);
 
-      producedQuantity:
-        undefined,
-
-      finishedAt:
-        new Date(),
-    });
+  if (
+    data.producedQuantity >
+    order.plannedQuantity
+  ) {
+    throw new Error(
+      "Quantidade produzida não pode ser maior que a planejada."
+    );
   }
+
+  const lossQuantity =
+    Number(order.plannedQuantity) -
+    Number(data.producedQuantity);
+
+  return repository.update(id, {
+    status: "COMPLETED",
+
+    producedQuantity:
+      data.producedQuantity,
+
+    lossQuantity,
+
+    productionNotes:
+      data.productionNotes,
+
+    finishedAt:
+      new Date(),
+  });
+ }
 }

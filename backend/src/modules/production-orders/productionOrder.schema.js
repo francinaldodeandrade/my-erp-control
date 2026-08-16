@@ -19,5 +19,17 @@ export const createProductionOrderSchema =
       .optional(),
   });
 
+  export const finishProductionOrderSchema =
+  z.object({
+    producedQuantity: z.coerce
+      .number()
+      .min(0),
+
+    productionNotes: z
+      .string()
+      .optional(),
+  });
+
+
 export const updateProductionOrderSchema =
   createProductionOrderSchema.partial();
