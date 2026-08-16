@@ -301,23 +301,23 @@ model PurchaseOrderItem {
 }
 
 model RawMaterial {
-  id             String           @id @default(uuid())
-  code           String           @unique
-  description    String
-  category       String?
-  unit           String
-  costPrice      Decimal
-  minimumStock   Decimal
-  currentStock   Decimal          @default(0)
-  supplierId     String?
-  active         Boolean          @default(true)
-  imageUrl       String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  lots           RawMaterialLot[]
-  supplier       Supplier?        @relation(fields: [supplierId], references: [id])
-  stockMovements StockMovement[]
-
+  id                 String               @id @default(uuid())
+  code               String               @unique
+  description        String
+  category           String?
+  unit               String
+  costPrice          Decimal
+  minimumStock       Decimal
+  currentStock       Decimal              @default(0)
+  supplierId         String?
+  active             Boolean              @default(true)
+  imageUrl           String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  lots               RawMaterialLot[]
+  supplier           Supplier?            @relation(fields: [supplierId], references: [id])
+  stockMovements     StockMovement[]
+  formulaItems       ProductFormulaItem[]
   purchaseOrderItems PurchaseOrderItem[]
 
   @@map("raw_materials")
@@ -353,6 +353,8 @@ model FinishedProduct {
   saleItems          SaleItem[]
   stockMovements     StockMovement[]
   stockDistributions StockDistribution[]
+  formulas           ProductFormula[]     @relation("FormulaProduct")
+  formulaItems       ProductFormulaItem[] @relation("FormulaComponentFinishedProduct")
 
   @@map("finished_products")
 }
@@ -371,23 +373,24 @@ model FinishedProductLot {
 }
 
 model MaintenancePart {
-  id                 String              @id @default(uuid())
-  code               String              @unique
+  id                 String               @id @default(uuid())
+  code               String               @unique
   description        String
   category           String?
   unit               String
   costPrice          Decimal
   minimumStock       Decimal
-  currentStock       Decimal             @default(0)
+  currentStock       Decimal              @default(0)
   supplierId         String?
-  active             Boolean             @default(true)
+  active             Boolean              @default(true)
   imageUrl           String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
   maintenanceItems   MaintenanceItem[]
-  supplier           Supplier?           @relation(fields: [supplierId], references: [id])
+  supplier           Supplier?            @relation(fields: [supplierId], references: [id])
   stockMovements     StockMovement[]
   purchaseOrderItems PurchaseOrderItem[]
+  formulaItems       ProductFormulaItem[]
 
   @@map("maintenance_parts")
 }
@@ -855,6 +858,58 @@ model KpiHistory {
   @@map("kpi_history")
 }
 
+model ProductFormula {
+  id String @id @default(uuid())
+
+  finishedProductId String
+
+  version Int @default(1)
+
+  notes String?
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  finishedProduct FinishedProduct @relation("FormulaProduct", fields: [finishedProductId], references: [id])
+
+  items ProductFormulaItem[] @relation("FormulaItems")
+
+  @@unique([finishedProductId, version])
+  @@map("product_formulas")
+}
+
+model ProductFormulaItem {
+  id String @id @default(uuid())
+
+  formulaId String
+
+  componentType FormulaComponentType
+
+  rawMaterialId     String?
+  finishedProductId String?
+  maintenancePartId String?
+
+  quantity Decimal
+
+  lossPercentage Decimal? @default(0)
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  formula ProductFormula @relation("FormulaItems", fields: [formulaId], references: [id])
+
+  rawMaterial RawMaterial? @relation(fields: [rawMaterialId], references: [id])
+
+  finishedProduct FinishedProduct? @relation("FormulaComponentFinishedProduct", fields: [finishedProductId], references: [id])
+
+  maintenancePart MaintenancePart? @relation(fields: [maintenancePartId], references: [id])
+
+  @@map("product_formula_items")
+}
+
 enum SyncStatus {
   PENDING
   PROCESSING
@@ -1021,4 +1076,11 @@ enum NotificationStatus {
   PENDING
   READ
   RESOLVED
+}
+
+enum FormulaComponentType {
+  RAW_MATERIAL
+  // SEMI_FINISHED
+  FINISHED_PRODUCT
+  MAINTENANCE_PART
 }

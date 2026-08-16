@@ -22,6 +22,10 @@ import purchaseRoutes from "../modules/purchases/purchase.routes.js";
 
 import rawMaterialRoutes from "../modules/raw-materials/rawMaterial.routes.js";
 
+import formulaRoutes from "../modules/formulas/formula.routes.js";
+
+import finishedProductRoutes from "../modules/finished-products/finishedProduct.routes.js";
+
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -86,6 +90,16 @@ router.use(
 router.use(
   "/raw-materials",
   rawMaterialRoutes
+);
+
+router.use(
+  "/formulas",
+  formulaRoutes
+);
+
+router.use(
+  "/finished-products",
+  finishedProductRoutes
 );
 
 export default router;
