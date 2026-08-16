@@ -355,6 +355,7 @@ model FinishedProduct {
   stockDistributions StockDistribution[]
   formulas           ProductFormula[]     @relation("FormulaProduct")
   formulaItems       ProductFormulaItem[] @relation("FormulaComponentFinishedProduct")
+  productionOrders   ProductionOrder[]
 
   @@map("finished_products")
 }
@@ -876,8 +877,51 @@ model ProductFormula {
 
   items ProductFormulaItem[] @relation("FormulaItems")
 
+  productionOrders ProductionOrder[]
+
   @@unique([finishedProductId, version])
   @@map("product_formulas")
+}
+
+model ProductionOrder {
+  id String @id @default(uuid())
+
+  number String @unique
+
+  finishedProductId String
+
+  formulaId String
+
+  createdById String?
+
+  status ProductionStatus @default(DRAFT)
+
+  plannedQuantity Decimal
+
+  producedQuantity Decimal @default(0)
+
+  lossQuantity Decimal @default(0)
+
+  notes String?
+
+  productionNotes String?
+
+  startedAt DateTime?
+
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  finishedProduct FinishedProduct @relation(fields: [finishedProductId], references: [id])
+
+  formula ProductFormula @relation(fields: [formulaId], references: [id])
+
+  @@index([status])
+  @@index([finishedProductId])
+  @@index([createdAt])
+  @@map("production_orders")
 }
 
 model ProductFormulaItem {
@@ -1083,4 +1127,12 @@ enum FormulaComponentType {
   // SEMI_FINISHED
   FINISHED_PRODUCT
   MAINTENANCE_PART
+}
+
+enum ProductionStatus {
+  DRAFT
+  RELEASED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
 }

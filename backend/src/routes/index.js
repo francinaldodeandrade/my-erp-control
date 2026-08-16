@@ -26,6 +26,8 @@ import formulaRoutes from "../modules/formulas/formula.routes.js";
 
 import finishedProductRoutes from "../modules/finished-products/finishedProduct.routes.js";
 
+import productionOrderRoutes from "../modules/production-orders/productionOrder.routes.js";
+
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -100,6 +102,11 @@ router.use(
 router.use(
   "/finished-products",
   finishedProductRoutes
+);
+
+router.use(
+  "/production-orders",
+  productionOrderRoutes
 );
 
 export default router;
