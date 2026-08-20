@@ -84,6 +84,31 @@ export class ProductionOrderController {
     });
   }
 
+  // async finish(req, res) {
+  // try {
+  //   const data =
+  //     await service.finish(
+  //       req.params.id,
+  //       req.body
+  //     );
+
+  //   return res.json({
+  //     success: true,
+  //     data,
+  //   });
+  // } catch (error) {
+  //   return res.status(400).json({
+  //     success: false,
+  //     message: error.message,
+  //   });
+  // }
+
+
+  //   return res.json({
+  //     success: true,
+  //     data,
+  //   });
+  // }
   async finish(req, res) {
   try {
     const data =
@@ -102,11 +127,5 @@ export class ProductionOrderController {
       message: error.message,
     });
   }
-
-
-    return res.json({
-      success: true,
-      data,
-    });
-  }
+}
 }

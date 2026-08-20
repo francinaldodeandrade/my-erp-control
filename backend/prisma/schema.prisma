@@ -883,6 +883,47 @@ model ProductFormula {
   @@map("product_formulas")
 }
 
+// model ProductionOrder {
+//   id String @id @default(uuid())
+
+//   number String @unique
+
+//   finishedProductId String
+
+//   formulaId String
+
+//   createdById String?
+
+//   status ProductionStatus @default(DRAFT)
+
+//   plannedQuantity Decimal
+
+//   producedQuantity Decimal @default(0)
+
+//   lossQuantity Decimal @default(0)
+
+//   notes String?
+
+//   productionNotes String?
+
+//   startedAt DateTime?
+
+//   finishedAt DateTime?
+
+//   createdAt DateTime @default(now())
+
+//   updatedAt DateTime @updatedAt
+
+//   finishedProduct FinishedProduct @relation(fields: [finishedProductId], references: [id])
+
+//   formula ProductFormula @relation(fields: [formulaId], references: [id])
+
+//   @@index([status])
+//   @@index([finishedProductId])
+//   @@index([createdAt])
+//   @@map("production_orders")
+// }
+
 model ProductionOrder {
   id String @id @default(uuid())
 
@@ -892,15 +933,19 @@ model ProductionOrder {
 
   formulaId String
 
-  createdById String?
-
   status ProductionStatus @default(DRAFT)
 
+  // Quantidade planejada pela OP
   plannedQuantity Decimal
 
+  // Quantidade efetivamente recebida no estoque
   producedQuantity Decimal @default(0)
 
+  // Perda de produção
   lossQuantity Decimal @default(0)
+
+  // Quantidade devolvida para reprocesso
+  returnedQuantity Decimal @default(0)
 
   notes String?
 
@@ -1058,6 +1103,7 @@ enum MovementType {
   ADJUSTMENT
   INVENTORY
   LOSS
+  RETURN
 }
 
 enum CustomerType {

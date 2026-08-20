@@ -19,17 +19,31 @@ export const createProductionOrderSchema =
       .optional(),
   });
 
+  // export const finishProductionOrderSchema =
+  // z.object({
+  //   producedQuantity: z.coerce
+  //     .number()
+  //     .min(0),
+
+  //   productionNotes: z
+  //     .string()
+  //     .optional(),
+  // });
+
   export const finishProductionOrderSchema =
   z.object({
-    producedQuantity: z.coerce
-      .number()
-      .min(0),
+    producedQuantity:
+      z.coerce.number().min(0),
 
-    productionNotes: z
-      .string()
-      .optional(),
+    lossQuantity:
+      z.coerce.number().min(0),
+
+    returnedQuantity:
+      z.coerce.number().min(0),
+
+    productionNotes:
+      z.string().optional(),
   });
-
 
 export const updateProductionOrderSchema =
   createProductionOrderSchema.partial();
