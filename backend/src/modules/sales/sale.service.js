@@ -13,97 +13,248 @@ const financialService = new FinancialService();
 const stockService = new StockService();
 
 export class SaleService {
+  // async create(data) {
+  //   const customer =
+  //     await prisma.customer.findUnique({
+  //       where: {
+  //         id: data.customerId,
+  //       },
+  //     });
+
+  //   if (!customer) {
+  //     throw new Error(
+  //       "Cliente não encontrado."
+  //     );
+  //   }
+
+  //   const seller =
+  //     await prisma.user.findUnique({
+  //       where: {
+  //         id: data.sellerId,
+  //       },
+  //     });
+
+  //   if (!seller) {
+  //     throw new Error(
+  //       "Vendedor não encontrado."
+  //     );
+  //   }
+
+  //   let subtotal = 0;
+
+  //   const items = [];
+
+  //   for (const item of data.items) {
+  //     const product =
+  //       await prisma.finishedProduct.findUnique({
+  //         where: {
+  //           id: item.finishedProductId,
+  //         },
+  //       });
+
+  //     if (!product) {
+  //       throw new Error(
+  //         "Produto não encontrado."
+  //       );
+  //     }
+
+  //     const totalPrice =
+  //       Number(item.quantity) *
+  //       Number(item.unitPrice);
+
+  //     subtotal += totalPrice;
+
+  //     items.push({
+  //       finishedProductId:
+  //         item.finishedProductId,
+
+  //       quantity: item.quantity,
+
+  //       unitPrice: item.unitPrice,
+
+  //       totalPrice,
+  //     });
+  //   }
+
+  //   const totalAmount =
+  //     subtotal - Number(data.discount || 0);
+
+  //   return repository.create({
+  //     number: `SALE-${Date.now()}`,
+
+  //     customerId: data.customerId,
+
+  //     sellerId: data.sellerId,
+
+  //     subtotal,
+
+  //     discount:
+  //       data.discount || 0,
+
+  //     totalAmount,
+
+  //     notes: data.notes,
+
+  //     items: {
+  //       create: items,
+  //     },
+
+  //     payments: {
+  //       create: data.payments,
+  //     },
+  //   });
+  // }
   async create(data) {
-    const customer =
-      await prisma.customer.findUnique({
-        where: {
-          id: data.customerId,
-        },
-      });
 
-    if (!customer) {
-      throw new Error(
-        "Cliente não encontrado."
-      );
-    }
-
-    const seller =
-      await prisma.user.findUnique({
-        where: {
-          id: data.sellerId,
-        },
-      });
-
-    if (!seller) {
-      throw new Error(
-        "Vendedor não encontrado."
-      );
-    }
-
-    let subtotal = 0;
-
-    const items = [];
-
-    for (const item of data.items) {
-      const product =
-        await prisma.finishedProduct.findUnique({
-          where: {
-            id: item.finishedProductId,
-          },
-        });
-
-      if (!product) {
-        throw new Error(
-          "Produto não encontrado."
-        );
-      }
-
-      const totalPrice =
-        Number(item.quantity) *
-        Number(item.unitPrice);
-
-      subtotal += totalPrice;
-
-      items.push({
-        finishedProductId:
-          item.finishedProductId,
-
-        quantity: item.quantity,
-
-        unitPrice: item.unitPrice,
-
-        totalPrice,
-      });
-    }
-
-    const totalAmount =
-      subtotal - Number(data.discount || 0);
-
-    return repository.create({
-      number: `SALE-${Date.now()}`,
-
-      customerId: data.customerId,
-
-      sellerId: data.sellerId,
-
-      subtotal,
-
-      discount:
-        data.discount || 0,
-
-      totalAmount,
-
-      notes: data.notes,
-
-      items: {
-        create: items,
-      },
-
-      payments: {
-        create: data.payments,
+  const customer =
+    await prisma.customer.findUnique({
+      where: {
+        id: data.customerId,
       },
     });
+
+  if (!customer) {
+    throw new Error(
+      "Cliente não encontrado."
+    );
   }
+
+  const seller =
+    await prisma.user.findUnique({
+      where: {
+        id: data.sellerId,
+      },
+    });
+
+  if (!seller) {
+    throw new Error(
+      "Vendedor não encontrado."
+    );
+  }
+
+  let subtotal = 0;
+
+  const items = [];
+
+  let status = "PENDING";
+
+  for (const item of data.items) {
+
+    const product =
+      await prisma.finishedProduct.findUnique({
+        where: {
+          id:
+            item.finishedProductId,
+        },
+      });
+
+    if (!product) {
+      throw new Error(
+        "Produto não encontrado."
+      );
+    }
+
+    const sellerStock =
+      await prisma.sellerStock.findUnique({
+        where: {
+          sellerId_finishedProductId: {
+            sellerId:
+              data.sellerId,
+
+            finishedProductId:
+              item.finishedProductId,
+          },
+        },
+      });
+
+    const available =
+      Number(
+        sellerStock?.quantity || 0
+      );
+
+    const requested =
+      Number(item.quantity);
+
+    if (available < requested) {
+
+      status =
+        "WAITING_STOCK";
+
+      await createNotification({
+        title:
+          "Venda aguardando estoque",
+
+        message:
+          `O vendedor ${seller.name} não possui estoque suficiente para o produto ${product.description}.`,
+
+        type:
+          "ORDER_WAITING_STOCK",
+
+        referenceTable:
+          "sales",
+      });
+
+    }
+
+    const totalPrice =
+      Number(item.quantity) *
+      Number(item.unitPrice);
+
+    subtotal += totalPrice;
+
+    items.push({
+      finishedProductId:
+        item.finishedProductId,
+
+      quantity:
+        item.quantity,
+
+      unitPrice:
+        item.unitPrice,
+
+      totalPrice,
+    });
+  }
+
+  const totalAmount =
+    subtotal -
+    Number(
+      data.discount || 0
+    );
+
+  return repository.create({
+    number:
+      `SALE-${Date.now()}`,
+
+    customerId:
+      data.customerId,
+
+    sellerId:
+      data.sellerId,
+
+    subtotal,
+
+    discount:
+      data.discount || 0,
+
+    totalAmount,
+
+    status,
+
+    notes:
+      data.notes,
+
+    items: {
+      create: items,
+    },
+
+    payments: {
+      create:
+        data.payments,
+    },
+  });
+
+}
 
   async findMany() {
     return repository.findMany();
@@ -161,7 +312,59 @@ export class SaleService {
 //   return approvedSale;
 // }
 
-  async approve(id) {
+//   async approve(id) {
+//   const sale =
+//     await repository.findById(id);
+
+//   if (!sale) {
+//     throw new Error(
+//       "Venda não encontrada."
+//     );
+//   }
+
+//   if (sale.status === "APPROVED") {
+//     throw new Error(
+//       "Venda já aprovada."
+//     );
+//   }
+
+//   const approvedSale =
+//     await repository.updateStatus(
+//       id,
+//       "APPROVED"
+//     );
+
+//   await financialService
+//     .createReceivableFromSale(
+//       sale
+//     );
+
+//   await stockService
+//     .processSale(
+//       sale
+//     );
+
+//   await createNotification({
+//   title: "Venda aprovada",
+//   message: `Venda ${sale.number} aprovada com sucesso.`,
+//   type: "SYSTEM",
+//   referenceTable: "sales",
+//   referenceId: sale.id,
+// });
+
+// await createNotification({
+//   title: "Conta a receber criada",
+//   message: `Recebível de R$ ${sale.totalAmount} criado para a venda ${sale.number}.`,
+//   type: "FINANCIAL",
+//   referenceTable: "financial_transactions",
+//   referenceId: sale.id,
+// });
+
+//   return approvedSale;
+// }
+
+async approve(id) {
+
   const sale =
     await repository.findById(id);
 
@@ -171,11 +374,26 @@ export class SaleService {
     );
   }
 
-  if (sale.status === "APPROVED") {
+  if (
+    sale.status ===
+    "APPROVED"
+  ) {
     throw new Error(
       "Venda já aprovada."
     );
   }
+
+  if (
+    sale.status ===
+    "WAITING_STOCK"
+  ) {
+    throw new Error(
+      "Venda aguardando reposição de estoque."
+    );
+  }
+
+  await stockService
+    .processSale(sale);
 
   const approvedSale =
     await repository.updateStatus(
@@ -188,26 +406,39 @@ export class SaleService {
       sale
     );
 
-  await stockService
-    .processSale(
-      sale
-    );
+  await createNotification({
+    title:
+      "Venda aprovada",
+
+    message:
+      `Venda ${sale.number} aprovada com sucesso.`,
+
+    type:
+      "SYSTEM",
+
+    referenceTable:
+      "sales",
+
+    referenceId:
+      sale.id,
+  });
 
   await createNotification({
-  title: "Venda aprovada",
-  message: `Venda ${sale.number} aprovada com sucesso.`,
-  type: "SYSTEM",
-  referenceTable: "sales",
-  referenceId: sale.id,
-});
+    title:
+      "Conta a receber criada",
 
-await createNotification({
-  title: "Conta a receber criada",
-  message: `Recebível de R$ ${sale.totalAmount} criado para a venda ${sale.number}.`,
-  type: "FINANCIAL",
-  referenceTable: "financial_transactions",
-  referenceId: sale.id,
-});
+    message:
+      `Recebível de R$ ${sale.totalAmount} criado para a venda ${sale.number}.`,
+
+    type:
+      "FINANCIAL",
+
+    referenceTable:
+      "financial_transactions",
+
+    referenceId:
+      sale.id,
+  });
 
   return approvedSale;
 }

@@ -30,21 +30,43 @@ prisma.productionOrder
     });
   }
 
+  // async findById(id) {
+  //   return prisma.productionOrder.findUnique({
+  //     where: { id },
+
+  //     include: {
+  //       finishedProduct: true,
+
+  //       formula: {
+  //         include: {
+  //           items: true,
+  //         },
+  //       },
+  //     },
+  //   });
+  // }
+
   async findById(id) {
-    return prisma.productionOrder.findUnique({
-      where: { id },
+  return prisma.productionOrder.findUnique({
+    where: { id },
 
-      include: {
-        finishedProduct: true,
+    include: {
+      finishedProduct: true,
 
-        formula: {
-          include: {
-            items: true,
+      formula: {
+        include: {
+          items: {
+            include: {
+              rawMaterial: true,
+              maintenancePart: true,
+              finishedProduct: true,
+            },
           },
         },
       },
-    });
-  }
+    },
+  });
+}
 
   async update(id, data) {
     return prisma.productionOrder.update({

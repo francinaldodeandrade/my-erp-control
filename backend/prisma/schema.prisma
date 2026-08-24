@@ -69,21 +69,21 @@ model MaintenanceSchedule {
 }
 
 model User {
-  id                  String            @id @default(uuid())
+  id                  String              @id @default(uuid())
   name                String
-  email               String            @unique
-  active              Boolean           @default(true)
+  email               String              @unique
+  active              Boolean             @default(true)
   passwordChangedAt   DateTime?
   avatarUrl           String?
-  isOnline            Boolean           @default(false)
+  isOnline            Boolean             @default(false)
   lastSeenAt          DateTime?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
   passwordHash        String
   roleId              String
-  failedLoginAttempts Int               @default(0)
+  failedLoginAttempts Int                 @default(0)
   lockedUntil         DateTime?
-  mustChangePassword  Boolean           @default(true)
+  mustChangePassword  Boolean             @default(true)
   auditLogs           AuditLog[]
   devices             Device[]
   passwordHistory     PasswordHistory[]
@@ -91,8 +91,8 @@ model User {
   stockMovements      StockMovement[]
   sessions            UserSession[]
   documents           Document[]
-  role                Role              @relation(fields: [roleId], references: [id])
-
+  role                Role                @relation(fields: [roleId], references: [id])
+  sellerStocks        SellerStock[]
   customers           Customer[]          @relation("SellerCustomers")
   approvedSales       Sale[]              @relation("ApprovedSales")
   approvedPurchases   PurchaseOrder[]     @relation("ApprovedPurchases")
@@ -320,6 +320,7 @@ model RawMaterial {
   formulaItems       ProductFormulaItem[]
   purchaseOrderItems PurchaseOrderItem[]
 
+  @@index([active])
   @@map("raw_materials")
 }
 
@@ -356,13 +357,16 @@ model FinishedProduct {
   formulas           ProductFormula[]     @relation("FormulaProduct")
   formulaItems       ProductFormulaItem[] @relation("FormulaComponentFinishedProduct")
   productionOrders   ProductionOrder[]
+  sellerStocks       SellerStock[]
 
+  @@index([active])
   @@map("finished_products")
 }
 
 model FinishedProductLot {
   id                String          @id @default(uuid())
   finishedProductId String
+  productionOrderId String?
   lotNumber         String
   manufactureDate   DateTime?
   expirationDate    DateTime?
@@ -409,34 +413,23 @@ model StockMovement {
   balanceBefore     Decimal?
   balanceAfter      Decimal?
   referenceNumber   String?
+  productionOrderId String?
   documentNumber    String?
   notes             String?
   userId            String?
   movementDate      DateTime         @default(now())
   createdAt         DateTime         @default(now())
   finishedProduct   FinishedProduct? @relation(fields: [finishedProductId], references: [id])
+  productionOrder   ProductionOrder? @relation(fields: [productionOrderId], references: [id])
   maintenancePart   MaintenancePart? @relation(fields: [maintenancePartId], references: [id])
   rawMaterial       RawMaterial?     @relation(fields: [rawMaterialId], references: [id])
   user              User?            @relation(fields: [userId], references: [id])
 
+  @@index([movementDate])
+  @@index([movementType])
+  @@index([stockType])
   @@map("stock_movements")
 }
-
-// model StockDistribution {
-//   id String @id @default(uuid())
-
-//   sellerId String
-
-//   finishedProductId String
-
-//   quantity Decimal
-
-//   distributedAt DateTime @default(now())
-
-//   distributedById String
-
-//   notes String?
-// }
 
 model StockDistribution {
   id String @id @default(uuid())
@@ -883,47 +876,6 @@ model ProductFormula {
   @@map("product_formulas")
 }
 
-// model ProductionOrder {
-//   id String @id @default(uuid())
-
-//   number String @unique
-
-//   finishedProductId String
-
-//   formulaId String
-
-//   createdById String?
-
-//   status ProductionStatus @default(DRAFT)
-
-//   plannedQuantity Decimal
-
-//   producedQuantity Decimal @default(0)
-
-//   lossQuantity Decimal @default(0)
-
-//   notes String?
-
-//   productionNotes String?
-
-//   startedAt DateTime?
-
-//   finishedAt DateTime?
-
-//   createdAt DateTime @default(now())
-
-//   updatedAt DateTime @updatedAt
-
-//   finishedProduct FinishedProduct @relation(fields: [finishedProductId], references: [id])
-
-//   formula ProductFormula @relation(fields: [formulaId], references: [id])
-
-//   @@index([status])
-//   @@index([finishedProductId])
-//   @@index([createdAt])
-//   @@map("production_orders")
-// }
-
 model ProductionOrder {
   id String @id @default(uuid())
 
@@ -947,6 +899,10 @@ model ProductionOrder {
   // Quantidade devolvida para reprocesso
   returnedQuantity Decimal @default(0)
 
+  // yieldPercentage Decimal?
+
+  productionOrderId String?
+
   notes String?
 
   productionNotes String?
@@ -958,6 +914,8 @@ model ProductionOrder {
   createdAt DateTime @default(now())
 
   updatedAt DateTime @updatedAt
+
+  stockMovements StockMovement[]
 
   finishedProduct FinishedProduct @relation(fields: [finishedProductId], references: [id])
 
@@ -997,6 +955,55 @@ model ProductFormulaItem {
   maintenancePart MaintenancePart? @relation(fields: [maintenancePartId], references: [id])
 
   @@map("product_formula_items")
+}
+
+model ProductionHistory {
+  id String @id @default(uuid())
+
+  productionOrderId String
+
+  action String
+
+  oldStatus ProductionStatus?
+
+  newStatus ProductionStatus?
+
+  notes String?
+
+  userId String?
+
+  createdAt DateTime @default(now())
+}
+
+model SellerStock {
+  id String @id @default(uuid())
+
+  sellerId String
+
+  finishedProductId String
+
+  quantity Decimal @default(0)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  seller User @relation(fields: [sellerId], references: [id])
+
+  finishedProduct FinishedProduct @relation(fields: [finishedProductId], references: [id])
+
+  @@unique([sellerId, finishedProductId])
+  @@map("seller_stock")
+}
+
+model SellerInventory {
+  id String @id @default(uuid())
+
+  sellerId String
+
+  finishedProductId String
+
+  quantity Decimal
 }
 
 enum SyncStatus {

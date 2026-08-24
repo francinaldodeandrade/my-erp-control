@@ -5,64 +5,95 @@ import { createNotification }
   from "../../services/notification/createNotification.js";
 
 export class StockService {
+
   async processSale(sale) {
+
     for (const item of sale.items) {
 
-      const product =
-        await prisma.finishedProduct.findUnique({
+      const sellerStock =
+        await prisma.sellerStock.findUnique({
           where: {
-            id: item.finishedProductId,
+            sellerId_finishedProductId: {
+              sellerId: sale.sellerId,
+              finishedProductId:
+                item.finishedProductId,
+            },
+          },
+
+          include: {
+            finishedProduct: true,
           },
         });
 
-      if (!product) {
+      if (!sellerStock) {
         throw new Error(
-          "Produto não encontrado."
+          "Vendedor não possui estoque para este produto."
         );
       }
-
-      const balanceBefore =
-        Number(product.currentStock);
 
       const quantity =
         Number(item.quantity);
 
+      const balanceBefore =
+        Number(
+          sellerStock.quantity
+        );
+
       const balanceAfter =
-        balanceBefore - quantity;
+        balanceBefore -
+        quantity;
 
       if (balanceAfter < 0) {
         throw new Error(
-          `Estoque insuficiente para ${product.description}`
+          `Estoque insuficiente para venda de ${sellerStock.finishedProduct.description}`
         );
       }
 
-      await prisma.finishedProduct.update({
+      await prisma.sellerStock.update({
         where: {
-          id: product.id,
+          sellerId_finishedProductId: {
+            sellerId:
+              sale.sellerId,
+
+            finishedProductId:
+              item.finishedProductId,
+          },
         },
+
         data: {
-          currentStock: balanceAfter,
+          quantity:
+            balanceAfter,
         },
       });
 
       if (
-  balanceAfter <
-  Number(product.minimumStock)
-) {
-  await createNotification({
-    title: "Estoque abaixo do mínimo",
-    message:
-      `${product.description} está com estoque crítico.`,
-    type: "STOCK",
-    referenceTable:
-      "finished_products",
-    referenceId:
-      product.id,
-  });
-}
+        balanceAfter <
+        Number(
+          sellerStock.finishedProduct.minimumStock
+        )
+      ) {
+
+        await createNotification({
+          title:
+            "Estoque do vendedor abaixo do mínimo",
+
+          message:
+            `${sellerStock.finishedProduct.description} está com saldo crítico para o vendedor.`,
+
+          type: "STOCK",
+
+          referenceTable:
+            "seller_stock",
+
+          referenceId:
+            sellerStock.id,
+        });
+
+      }
 
       await prisma.stockMovement.create({
         data: {
+
           stockType:
             "FINISHED_PRODUCT",
 
@@ -70,7 +101,7 @@ export class StockService {
             "SALE",
 
           finishedProductId:
-            product.id,
+            item.finishedProductId,
 
           quantity,
 
@@ -81,13 +112,20 @@ export class StockService {
           referenceNumber:
             sale.number,
 
+          documentNumber:
+            sale.number,
+
           notes:
-            `Venda ${sale.number}`,
+            `Venda ${sale.number} realizada pelo vendedor ${sale.sellerId}`,
 
           movementDate:
             new Date(),
         },
       });
+
     }
+
+    return true;
   }
+
 }

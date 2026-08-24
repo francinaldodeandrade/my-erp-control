@@ -28,6 +28,9 @@ import finishedProductRoutes from "../modules/finished-products/finishedProduct.
 
 import productionOrderRoutes from "../modules/production-orders/productionOrder.routes.js";
 
+// import stockDistributionRoutes from "../modules/stock-distributions/stockDistribution.routes.js";
+import stockDistributionRoutes from "../modules/stock-distributions/stockDistribution.routes.js";
+
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -107,6 +110,11 @@ router.use(
 router.use(
   "/production-orders",
   productionOrderRoutes
+);
+
+router.use(
+  "/stock-distributions",
+  stockDistributionRoutes
 );
 
 export default router;

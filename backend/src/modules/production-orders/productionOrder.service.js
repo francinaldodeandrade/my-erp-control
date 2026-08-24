@@ -120,6 +120,49 @@ export class ProductionOrderService {
 //   });
 //  }
 
+// async finish(id, data) {
+//   const order =
+//     await this.findById(id);
+
+//   const plannedQuantity =
+//     Number(order.plannedQuantity);
+
+//   const producedQuantity =
+//     Number(data.producedQuantity || 0);
+
+//   const lossQuantity =
+//     Number(data.lossQuantity || 0);
+
+//   const returnedQuantity =
+//     Number(data.returnedQuantity || 0);
+
+//   const total =
+//     producedQuantity +
+//     lossQuantity +
+//     returnedQuantity;
+
+//   if (total !== plannedQuantity) {
+//     throw new Error(
+//       `A soma de produzido (${producedQuantity}) + perdas (${lossQuantity}) + devolução (${returnedQuantity}) deve ser igual à quantidade planejada (${plannedQuantity}).`
+//     );
+//   }
+
+//   return repository.update(id, {
+//     status: "COMPLETED",
+
+//     producedQuantity,
+
+//     lossQuantity,
+
+//     returnedQuantity,
+
+//     productionNotes:
+//       data.productionNotes,
+
+//     finishedAt: new Date(),
+//   });
+// }
+
 async finish(id, data) {
   const order =
     await this.findById(id);
@@ -147,19 +190,205 @@ async finish(id, data) {
     );
   }
 
-  return repository.update(id, {
-    status: "COMPLETED",
+  return prisma.$transaction(
+    async (tx) => {
 
-    producedQuantity,
+      let totalProductionCost = 0;
 
-    lossQuantity,
+      for (const item of order.formula.items) {
 
-    returnedQuantity,
+        if (
+          item.componentType !==
+          "RAW_MATERIAL"
+        ) {
+          continue;
+        }
 
-    productionNotes:
-      data.productionNotes,
+        if (!item.rawMaterial) {
+          continue;
+        }
 
-    finishedAt: new Date(),
-  });
+        const consumption =
+          Number(item.quantity) *
+          plannedQuantity;
+
+        const stockBefore =
+          Number(
+            item.rawMaterial.currentStock
+          );
+
+        if (
+          stockBefore <
+          consumption
+        ) {
+          throw new Error(
+            `Estoque insuficiente para ${item.rawMaterial.description}`
+          );
+        }
+
+        const stockAfter =
+          stockBefore -
+          consumption;
+
+        await tx.rawMaterial.update({
+          where: {
+            id:
+              item.rawMaterial.id,
+          },
+          data: {
+            currentStock:
+              stockAfter,
+          },
+        });
+
+        const unitCost =
+          Number(
+            item.rawMaterial.costPrice
+          );
+
+        const totalCost =
+          unitCost *
+          consumption;
+
+        totalProductionCost +=
+          totalCost;
+
+        await tx.stockMovement.create({
+          data: {
+            stockType:
+              "RAW_MATERIAL",
+
+            movementType:
+              "PRODUCTION",
+
+            rawMaterialId:
+              item.rawMaterial.id,
+
+            quantity:
+              consumption,
+
+            unitCost,
+
+            totalCost,
+
+            balanceBefore:
+              stockBefore,
+
+            balanceAfter:
+              stockAfter,
+
+            referenceNumber:
+              order.number,
+
+            documentNumber:
+              order.number,
+
+            notes:
+              "Consumo de produção",
+          },
+        });
+      }
+
+      const product =
+        await tx.finishedProduct.findUnique({
+          where: {
+            id:
+              order.finishedProductId,
+          },
+        });
+
+      const stockBefore =
+        Number(
+          product.currentStock
+        );
+
+      const stockAfter =
+        stockBefore +
+        producedQuantity;
+
+      const productionCost =
+        producedQuantity > 0
+          ? totalProductionCost /
+            producedQuantity
+          : 0;
+
+      await tx.finishedProduct.update({
+        where: {
+          id:
+            order.finishedProductId,
+        },
+        data: {
+          currentStock:
+            stockAfter,
+
+          productionCost,
+        },
+      });
+
+      await tx.stockMovement.create({
+        data: {
+          stockType:
+            "FINISHED_PRODUCT",
+
+          movementType:
+            "PRODUCTION",
+
+          finishedProductId:
+            order.finishedProductId,
+
+          quantity:
+            producedQuantity,
+
+          unitCost:
+            productionCost,
+
+          totalCost:
+            totalProductionCost,
+
+          balanceBefore:
+            stockBefore,
+
+          balanceAfter:
+            stockAfter,
+
+          referenceNumber:
+            order.number,
+
+          documentNumber:
+            order.number,
+
+          notes:
+            "Entrada de produção",
+        },
+      });
+
+      const updatedOrder =
+        await tx.productionOrder.update({
+          where: {
+            id,
+          },
+
+          data: {
+            status:
+              "COMPLETED",
+
+            producedQuantity,
+
+            lossQuantity,
+
+            returnedQuantity,
+
+            productionNotes:
+              data.productionNotes,
+
+            finishedAt:
+              new Date(),
+          },
+        });
+
+      return updatedOrder;
+    }
+  );
 }
+
 }

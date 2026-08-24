@@ -60,7 +60,21 @@ export class SaleController {
     }
   }
 
+  // async approve(req, res) {
+  //   const sale =
+  //     await service.approve(
+  //       req.params.id
+  //     );
+
+  //   return res.json({
+  //     success: true,
+  //     data: sale,
+  //   });
+  // }
+
   async approve(req, res) {
+  try {
+
     const sale =
       await service.approve(
         req.params.id
@@ -70,7 +84,17 @@ export class SaleController {
       success: true,
       data: sale,
     });
+
+  } catch (error) {
+
+    return res.status(400).json({
+      success: false,
+      message:
+        error.message,
+    });
+
   }
+}
 
   async cancel(req, res) {
     const sale =
