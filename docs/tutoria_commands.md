@@ -36,6 +36,76 @@ login
     "password": "Naldo@2026"
   }'
 
+Criar ordem de produção
+   
+   curl -X POST http://localhost:3000/production-orders \
+-H "Content-Type: application/json" \
+-d '{
+  "finishedProductId": "1f784212-a992-4cb0-bea8-843cbaee7e68",
+  "formulaId": "fb29d4e2-7593-43f4-a4d3-b603cbf00c1b",
+  "plannedQuantity": 100,
+  "notes": "Produção piloto PA001"
+}'
+
+Criar Ordem de Produção
+   curl -X POST http://localhost:3000/production-orders \
+-H "Content-Type: application/json" \
+-d '{
+  "finishedProductId": "ID_DO_PA001",
+  "formulaId": "ID_DA_FORMULA",
+  "plannedQuantity": 100,
+  "notes": "Produção piloto"
+}'
+
+Criar formula
+  curl -X POST http://localhost:3000/formulas \
+-H "Content-Type: application/json" \
+-d '{
+  "finishedProductId": "1f784212-a992-4cb0-bea8-843cbaee7e68",
+  "version": 1,
+  "notes": "Ficha técnica padrão do pão de forma tradicional",
+  "items": [
+    {
+      "componentType": "RAW_MATERIAL",
+      "rawMaterialId": "aeeb6f6d-f26d-49ff-9336-4ae6f37f8106",
+      "quantity": 1.000
+    },
+    {
+      "componentType": "RAW_MATERIAL",
+      "rawMaterialId": "7e9ec3dd-4f2e-4c4b-bad3-189c5f9056fa",
+      "quantity": 0.020
+    },
+    {
+      "componentType": "RAW_MATERIAL",
+      "rawMaterialId": "7fd76b65-6076-4f07-8b4d-aa50e44a5ca5",
+      "quantity": 0.030
+    },
+    {
+      "componentType": "RAW_MATERIAL",
+      "rawMaterialId": "d2758b71-2ee4-4578-9565-a268c3871353",
+      "quantity": 0.050
+    },
+    {
+      "componentType": "RAW_MATERIAL",
+      "rawMaterialId": "2bb18248-ce1b-4999-abdd-0d7c45f8f65d",
+      "quantity": 0.010
+    }
+  ]
+}'
+
+Criar estoque vendedor
+  curl -X POST http://localhost:3000/stock-distributions \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer SEU_TOKEN" \
+-d '{
+  "sellerId":"f59e2677-072a-446a-887d-efb7fe6793b6",
+  "finishedProductId":"1f784212-a992-4cb0-bea8-843cbaee7e68",
+  "distributedById":"57da6f41-7da6-45ee-9710-a4cce3c2df9b",
+  "quantity":10,
+  "notes":"Teste SellerStock"
+}'
+
+
 4. Testar
 
 No Ubuntu:
@@ -139,3 +209,8 @@ npx prisma generate
 
 9. entrar no postgress
 docker exec -it postgres-erp-control psql -U "naldo.dev" -d erp_control
+
+10. buscar trechos:
+sed -n '730,860p' prisma/schema.prisma
+
+grep -A 120 "model ProductFormula" prisma/schema.prisma
