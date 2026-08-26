@@ -5,6 +5,9 @@ import {
   StockDistributionRepository
 } from "./stockDistribution.repository.js";
 
+import { createNotification }
+  from "../../services/notification/createNotification.js";
+
 const repository =
   new StockDistributionRepository();
 
@@ -80,11 +83,7 @@ export class StockDistributionService {
           },
         });
 
-        const sellerStock =
-        await this.reprocessWaitingSales(
-  tx,
-  data.sellerId
-);
+      const sellerStock =
   await tx.sellerStock.findUnique({
     where: {
       sellerId_finishedProductId: {
@@ -94,20 +93,7 @@ export class StockDistributionService {
       },
     },
   });
-
 if (!sellerStock) {
-
-  // await tx.sellerStock.create({
-  //   data: {
-  //     sellerId:
-  //       data.sellerId,
-
-  //     finishedProductId:
-  //       data.finishedProductId,
-
-  //     quantity,
-  //   },
-  // });
 
   await tx.sellerStock.upsert({
   where: {
@@ -117,6 +103,8 @@ if (!sellerStock) {
         data.finishedProductId,
     },
   },
+
+  
 
   update: {
     quantity: {
@@ -133,6 +121,7 @@ if (!sellerStock) {
 });
 
 } else {
+ 
 
   await tx.sellerStock.update({
     where: {
@@ -154,7 +143,10 @@ if (!sellerStock) {
   });
 
 }
-
+ await this.reprocessWaitingSales(
+  tx,
+  data.sellerId
+);
         await tx.stockMovement.create({
           data: {
 
@@ -227,14 +219,23 @@ if (!sellerStock) {
     await tx.sale.findMany({
       where: {
         sellerId,
-        status:
-          "WAITING_STOCK",
+        status: "WAITING_STOCK",
       },
 
       include: {
         items: true,
       },
     });
+
+  console.log(
+    "REPROCESSANDO",
+    sellerId
+  );
+
+  console.log(
+    "VENDAS PENDENTES",
+    waitingSales.length
+  );
 
   for (const sale of waitingSales) {
 
@@ -261,9 +262,31 @@ if (!sellerStock) {
       const required =
         Number(item.quantity);
 
-      if (
-        available < required
-      ) {
+      console.log(
+        "VENDA:",
+        sale.number
+      );
+
+      console.log(
+        "PRODUTO:",
+        item.finishedProductId
+      );
+
+      console.log(
+        "QTD VENDA:",
+        required
+      );
+
+      console.log(
+        "QTD ESTOQUE:",
+        available
+      );
+
+      console.log(
+        `Comparando ${available} >= ${required}`
+      );
+
+      if (available < required) {
         hasStock = false;
         break;
       }
@@ -273,33 +296,34 @@ if (!sellerStock) {
       continue;
     }
 
+    console.log(
+      "LIBERANDO",
+      sale.number
+    );
+
     await tx.sale.update({
       where: {
         id: sale.id,
       },
 
       data: {
-        status:
-          "PENDING",
+        status: "PENDING",
       },
     });
 
+    // notificação opcional
     await createNotification({
-      title:
-        "Venda liberada",
+  title: "Venda liberada",
 
-      message:
-        `A venda ${sale.number} possui estoque disponível e pode ser aprovada.`,
+  message:
+    `A venda ${sale.number} possui estoque disponível e pode ser aprovada.`,
 
-      type:
-        "SYSTEM",
+  type: "SYSTEM",
 
-      referenceTable:
-        "sales",
+  referenceTable: "sales",
 
-      referenceId:
-        sale.id,
-    });
+  referenceId: sale.id,
+});
   }
 }
 }
