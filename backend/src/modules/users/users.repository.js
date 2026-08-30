@@ -12,11 +12,22 @@ export class UsersRepository {
     });
   }*/
 
-    async findAll() {
+//     async findAll() {
+//   return prisma.user.findMany({
+//     where: {
+//       active: true,
+//     },
+//     include: {
+//       role: true,
+//     },
+//     orderBy: {
+//       name: "asc",
+//     },
+//   });
+// }
+
+async findAll() {
   return prisma.user.findMany({
-    where: {
-      active: true,
-    },
     include: {
       role: true,
     },
