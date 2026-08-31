@@ -214,3 +214,12 @@ docker exec -it postgres-erp-control psql -U "naldo.dev" -d erp_control
 sed -n '730,860p' prisma/schema.prisma
 
 grep -A 120 "model ProductFormula" prisma/schema.prisma
+
+11.  abrir arquivos em massa
+     cat src/main.jsx && \
+echo "================================" && \
+cat src/routes/AppRoutes.jsx && \
+echo "================================" && \
+cat src/routes/PrivateRoute.jsx && \
+echo "================================" && \
+cat src/contexts/AuthProvider.jsx

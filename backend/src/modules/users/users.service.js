@@ -285,20 +285,53 @@ export class UsersService {
   return deletedUser;
 }
 
+  // async toggleActive(id, active) {
+  //   const user =
+  //     await usersRepository.findById(id);
+
+  //   if (!user) {
+  //     throw new AppError(
+  //       "Usuário não encontrado",
+  //       404
+  //     );
+  //   }
+
+  //   return usersRepository.toggleActive(
+  //     id,
+  //     active
+  //   );
+  // }
+
   async toggleActive(id, active) {
-    const user =
-      await usersRepository.findById(id);
+  const user =
+    await usersRepository.findById(id);
 
-    if (!user) {
-      throw new AppError(
-        "Usuário não encontrado",
-        404
-      );
-    }
-
-    return usersRepository.toggleActive(
-      id,
-      active
+  if (!user) {
+    throw new AppError(
+      "Usuário não encontrado",
+      404
     );
   }
+
+  if (
+    user.role?.name ===
+      "Administrador" &&
+    active === false
+  ) {
+    const activeAdmins =
+      await usersRepository.countActiveAdmins();
+
+    if (activeAdmins <= 1) {
+      throw new AppError(
+        "O sistema deve possuir ao menos um administrador ativo.",
+        400
+      );
+    }
+  }
+
+  return usersRepository.toggleActive(
+    id,
+    active
+  );
+}
 }

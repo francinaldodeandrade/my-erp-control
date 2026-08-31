@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import { usersApi } from "../../../api/users.api";
 import useRoles from "../../roles/hooks/useRoles";
@@ -9,9 +13,13 @@ export default function UserForm({
 }) {
   const { data: roles } = useRoles();
 
+  const queryClient = useQueryClient();
+
   const [name, setName] = useState(
     initialData?.name || ""
   );
+
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState(
     initialData?.email || ""
@@ -48,9 +56,15 @@ export default function UserForm({
           password,
         });
 
+        queryClient.invalidateQueries({
+          queryKey: ["users"],
+        });
+
         alert(
           "Usuário criado com sucesso"
         );
+
+        navigate("/users");
 
         setName("");
         setEmail("");

@@ -1,31 +1,6 @@
 import { prisma } from "../../config/prisma.js";
 
 export class UsersRepository {
- /* async findAll() {
-    return prisma.user.findMany({
-      include: {
-        role: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-  }*/
-
-//     async findAll() {
-//   return prisma.user.findMany({
-//     where: {
-//       active: true,
-//     },
-//     include: {
-//       role: true,
-//     },
-//     orderBy: {
-//       name: "asc",
-//     },
-//   });
-// }
-
 async findAll() {
   return prisma.user.findMany({
     include: {
@@ -46,12 +21,6 @@ async findAll() {
     });
   }
 
-  /*async findByEmail(email) {
-    return prisma.user.findUnique({
-      where: { email },
-    });
-  }*/
-
   async findByEmail(email) {
   return prisma.user.findFirst({
     where: {
@@ -66,6 +35,31 @@ async findAll() {
     where: {
       name,
     },
+  });
+}
+
+  async findRoleByName(name) {
+  return prisma.role.findFirst({
+    where: {
+      name,
+    },
+  });
+}
+
+async countActiveAdmins() {
+  return prisma.user.count({
+    where: {
+      active: true,
+      role: {
+        name: "Administrador",
+      },
+    },
+  });
+}
+
+async create(data) {
+  return prisma.user.create({
+    data,
   });
 }
 
