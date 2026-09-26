@@ -1,3 +1,7 @@
+import PageContainer from "../../../layouts/PageContainer";
+import PageHeader from "../../../layouts/PageHeader";
+
+
 import useSellers from "../hooks/useSellers";
 
 import SellersTable from "../components/SellersTable";
@@ -16,12 +20,14 @@ export default function SellersPage() {
     data?.data || [];
 
   return (
-    <div>
-      <h1>Vendedores</h1>
+    <PageContainer>
+      <PageHeader
+        title="Vendedores"
+      />
 
       <SellersTable
         sellers={sellers}
       />
-    </div>
+    </PageContainer>
   );
 }

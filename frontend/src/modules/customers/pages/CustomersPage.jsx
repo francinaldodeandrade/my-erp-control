@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import useCustomers
-from "../hooks/useCustomers";
+import PageContainer from "../../../layouts/PageContainer";
+import PageHeader from "../../../layouts/PageHeader";
 
-import CustomersStats
-from "../components/CustomersStats";
+import useCustomers from "../hooks/useCustomers";
 
-import CustomerTable
-from "../components/CustomerTable";
+import CustomersStats from "../components/CustomersStats";
+import CustomerTable from "../components/CustomerTable";
 
 export default function CustomersPage() {
   const [search, setSearch] =
@@ -30,69 +29,68 @@ export default function CustomersPage() {
   }
 
   return (
-    <div>
-      <h1>Clientes</h1>
+    <PageContainer>
+      <PageHeader
+        title="Clientes"
+        actions={
+          <Link to="/customers/new">
+            Novo Cliente
+          </Link>
+        }
+      />
 
       <input
         placeholder="Buscar cliente..."
         value={search}
         onChange={(e) =>
-          setSearch(
-            e.target.value
-          )
+          setSearch(e.target.value)
         }
       />
 
       <CustomersStats
-  customers={
-    data?.customers || []
-  }
-/>
-
-<Link to="/customers/new">
-  Novo Cliente
-</Link>
-
-<CustomerTable
-  customers={
-    data?.customers || []
-  }
-/>
-
-      {/* <pre>
-        {JSON.stringify(
-          data,
-          null,
-          2
-        )}
-      </pre> */}
-
-      
-
-      <button
-        disabled={page === 1}
-        onClick={() =>
-          setPage(page - 1)
+        customers={
+          data?.customers || []
         }
+      />
+
+      <CustomerTable
+        customers={
+          data?.customers || []
+        }
+      />
+
+      <div
+        style={{
+          display: "flex",
+          gap: "12px",
+          alignItems: "center",
+          marginTop: "16px",
+        }}
       >
-        Anterior
-      </button>
+        <button
+          disabled={page === 1}
+          onClick={() =>
+            setPage(page - 1)
+          }
+        >
+          Anterior
+        </button>
 
-      <span>
-        Página {data?.page}
-      </span>
+        <span>
+          Página {data?.page}
+        </span>
 
-      <button
-        disabled={
-          page >=
-          data?.totalPages
-        }
-        onClick={() =>
-          setPage(page + 1)
-        }
-      >
-        Próxima
-      </button>
-    </div>
+        <button
+          disabled={
+            page >= data?.totalPages
+          }
+          onClick={() =>
+            setPage(page + 1)
+          }
+        >
+          Próxima
+        </button>
+      </div>
+    </PageContainer>
   );
 }
